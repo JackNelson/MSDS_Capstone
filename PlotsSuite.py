@@ -174,3 +174,67 @@ def dailySentimentsOverview(df, ax1=None, ax2=None, title=''):
 
     #tighten subplot spacing
     plt.subplots_adjust(hspace=.03)
+       
+def dualAxisTimeSeries(df, x, y1, y2, ax=None, ax_dual=None, title='', xlabel='', y1label='', y2label='', MA_line=False, y1_window=None, y2_window=None, horz_line=False):
+    #assigning ax variable if not given for plotting
+    if ax is None:
+        ax = plt.gca()
+    
+    #plot price_diff series against date
+    ax.plot(df[x], df[y1], 'b:')
+    
+    if MA_line is True:
+        ax.plot(df[x], df[y1].rolling(window=y1_window).mean(), 'b-')
+
+    #determine maximum distance away from zero as factor of 100 (for y axis labels)
+    max_diff = np.ceil(max(np.abs(ax.get_ybound()))/100)*100
+    
+    #get the properly spaced xlabels determined by seaborn
+    xlabels = ax.get_xticklabels()
+
+    #price_diff series plot formatting
+    ax.set_title(title, color='k')
+    ax.set_xlabel(xlabel, color = 'k')
+    ax.tick_params('x',labelrotation=-45)
+    ax.set_xticklabels(xlabels, ha="left")
+    ax.tick_params('x', colors='k')
+    ax.set_ylabel(y1label, color='b')
+    ax.tick_params('y', colors='b')
+    ax.yaxis.set_ticks(np.linspace(0,max_diff,5))
+
+    #new plot with matching x axis as price_diff
+    ax_dual = ax.twinx()
+
+    #plot horizontal line to show +/- boundary
+    if horz_line is True:
+        horiz_line = np.array([0 for i in range(len(df[x]))])
+        ax_dual.plot(df[x],horiz_line, 'k')
+
+    #plot daily_sentiment series against date
+    ax_dual.plot(df[x], df[y2], 'm:')
+    
+    if MA_line is True:
+        ax_dual.plot(df[x], df[y2].rolling(window=y2_window).mean(), 'm-')
+
+    #determine maximum distance away from zero as factor of 10 (for y axis labels)
+    max_pol = np.ceil(max(np.abs(ax_dual.get_ybound()))*10)/10
+
+    #daily_sentiment series plot formatting
+    ax_dual.set_ylabel(y2label, color='m')
+    ax_dual.tick_params('y', colors='m')
+    ax_dual.yaxis.set_ticks(np.linspace(0,max_pol,5))
+
+    #custom legend for both plots
+    blue_circle = mlines.Line2D([],[], color='b', label=y1, linestyle=":")
+    pink_square = mlines.Line2D([],[], color='m', label=y2, linestyle=":")
+    
+    if MA_line is True:
+        blue_line = mlines.Line2D([],[], color='b', label=y1+" (MA="+str(y1_window)+")", linestyle="-")
+        pink_line = mlines.Line2D([],[], color='m', label=y2+" (MA="+str(y2_window)+")", linestyle="-")
+        
+        plt.legend(handles=[blue_circle,blue_line,pink_square,pink_line], loc = "upper left")
+    else:
+        plt.legend(handles=[blue_circle,pink_square], loc = "upper left")
+    
+    #plot formatting to prevent subplot overlap
+    plt.tight_layout()
